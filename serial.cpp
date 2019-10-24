@@ -5,34 +5,47 @@
 #include <vector>
 #include "common.h"
 
+using namespace std;
+
 // Function to return which neighbors are valid
-vector getNeighbors(int pos, int num_bins) {
+vector<int> getNeighbors(int pos, int num_bins) {
+    vector<int> neighbors(8);
     if (pos % num_bins == 0) {
         // Left column
         if (floor(pos / num_bins) == 0)
         {
             // Top row => top left corner
-            vector<int> neighbors(3);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos + num_bins);
             neighbors.push_back(pos + num_bins + 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
         }
         else if (floor(pos / num_bins) == num_bins - 1)
         {
             // Bottom row => bottom left corner
-            vector<int> neighbors(3);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos - num_bins + 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
         }
         else
         {
-            vector<int> neighbors(5);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos + num_bins);  
             neighbors.push_back(pos - num_bins + 1);
             neighbors.push_back(pos + num_bins + 1);    
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
         }
     }
     else if (pos % num_bins == num_bins - 1) {
@@ -41,54 +54,67 @@ vector getNeighbors(int pos, int num_bins) {
         if (floor(pos / num_bins) == 0)
         {
             // Top row => top right corner
-            vector<int> neighbors(3);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos + num_bins);
             neighbors.push_back(pos + num_bins - 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
         }
         else if (floor(pos / num_bins) == num_bins - 1)
         {
             // Bottom row => bottom right corner
-            vector<int> neighbors(3);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos - num_bins - 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
         }
         else 
         {
-            vector<int> neighbors(5);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos - num_bins - 1);
             neighbors.push_back(pos + num_bins);
             neighbors.push_back(pos + num_bins - 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
         }
     }
     else if (floor(pos / num_bins) == 0)
     {
         // Top row
-        vector<int> neighbors(5);
         neighbors.push_back(pos - 1);
         neighbors.push_back(pos + 1);
         neighbors.push_back(pos + num_bins);
         neighbors.push_back(pos + num_bins - 1);
         neighbors.push_back(pos + num_bins + 1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
 
     }
     else if(floor(pos / num_bins) == num_bins - 1)
     {
         // Bottom row
-        vector<int> neighbors(5);
         neighbors.push_back(pos + 1);
         neighbors.push_back(pos - 1);
         neighbors.push_back(pos - num_bins);
         neighbors.push_back(pos - num_bins - 1);
         neighbors.push_back(pos - num_bins + 1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
     }
     else 
     {
         // All eight neighbors are valid
-        vector<int> neighbors(8);
         neighbors.push_back(pos + 1);
         neighbors.push_back(pos - 1);
         neighbors.push_back(pos + num_bins);
@@ -136,7 +162,7 @@ int main( int argc, char **argv )
     // The grid size is 0.0005 * number of particles
     // So make sure the bins only consider the cutoff radius where the particles actually react to each other
     // We know cutoff is the length of the bin
-    num_bins = (density * n) / cutoff;
+    int num_bins = (getDensity() * n) / getCutoff();
 
     // Array to keep track of which particles are in which bins
     // We have to compute the bin for each particle, so this is O(n)
@@ -148,8 +174,8 @@ int main( int argc, char **argv )
     for (int i = 0; i < n; i++)
     {
         // Compute which bin a particle belongs to based on its location
-        offset_x = floor(particles[i].x / cutoff);
-        offset_y = floor(particles[i].y / cutoff);
+        offset_x = floor(particles[i].x / getCutoff());
+        offset_y = floor(particles[i].y / getCutoff());
 
         which_bin = num_bins * offset_y + offset_x;
 
@@ -180,8 +206,8 @@ int main( int argc, char **argv )
             particles[i].ax = particles[i].ay = 0;
 
             // Get the bin of the current particle
-            offset_x = floor(particles[i].x / cutoff);
-            offset_y = floor(particles[i].y / cutoff);
+            offset_x = floor(particles[i].x / getCutoff());
+            offset_y = floor(particles[i].y / getCutoff());
             which_bin = num_bins * offset_y + offset_x;
 
             // Get the neighbors of this bin 
@@ -191,17 +217,20 @@ int main( int argc, char **argv )
             // Consider each neighboring bin
             for (int k = 0; k < neighbors.size(); k++)
             {
-                // Consider each particle in that bin   
-                for (int p = 0; p < bins[k].size(); p++)
+                if (neighbors[k] > 0) 
                 {
-                    // Compute the force between the current particle and the particles in this bin
-                    apply_force(particles[i], particles[p], &dmin, &davg, &navg);
+                    // Consider each particle in that bin   
+                    for (int p = 0; p < bins[k].size(); p++)
+                    {
+                        // Compute the force between the current particle and the particles in this bin
+                        apply_force(particles[i], particles[p], &dmin, &davg, &navg);
+                    }
                 }
 
             }
 
             // Clear the neighbors vector
-            neighbors.erase(neighbors.begin(), neighbors.size()-1)
+            neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
         }
  
         //
@@ -232,15 +261,15 @@ int main( int argc, char **argv )
         // First, clear the current bin information
         for (int i = 0; i < num_bins * num_bins; i++)
         {
-            bins[i].erase(bins.begin(), bins.size()-1);
+            bins[i].erase(bins[i].begin(), bins[i].begin() + n - 1);
         }
 
         // Update
         for (int i = 0; i < n; i++)
         {
             // Compute which bin a particle belongs to based on its location
-            offset_x = floor(particles[i].x / cutoff);
-            offset_y = floor(particles[i].y / cutoff);
+            offset_x = floor(particles[i].x / getCutoff());
+            offset_y = floor(particles[i].y / getCutoff());
 
             which_bin = num_bins * offset_y + offset_x;
 
@@ -249,7 +278,7 @@ int main( int argc, char **argv )
         }
 
         // Clear the neighbors vector
-        neighbors.erase(neighbors.begin(), neighbors.size()-1)
+        neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
     }
     simulation_time = read_timer( ) - simulation_time;
     
