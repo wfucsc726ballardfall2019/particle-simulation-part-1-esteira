@@ -1,10 +1,10 @@
 #include <stdlib.h>
-#include <stdio.h>
+#include <iostream>
 #include <assert.h>
+#include <stdio.h>
 #include <math.h>
 #include <vector>
 #include "common.h"
-#include <iostream>
 
 using namespace std;
 
@@ -163,7 +163,7 @@ int main( int argc, char **argv )
     // The grid size is 0.0005 * number of particles
     // So make sure the bins only consider the cutoff radius where the particles actually react to each other
     // We know cutoff is the length of the bin
-    int num_bins = (sqrt(getDensity() * n)) / getCutoff();
+    int num_bins = ceil((sqrt(getDensity() * n)) / getCutoff());
     cout << "num_bins " << num_bins << endl;
 
     // Array to keep track of which particles are in which bins
@@ -180,11 +180,11 @@ int main( int argc, char **argv )
         offset_y = floor(particles[i].y / getCutoff());
 
         // ????
-        if (offset_x == num_bins)
+        /*if (offset_x == num_bins)
             offset_x--;
 
         if (offset_y == num_bins)
-            offset_y--;
+            offset_y--;*/
 
         which_bin = num_bins * offset_y + offset_x;
         if (which_bin >= num_bins * num_bins) {
@@ -238,7 +238,7 @@ int main( int argc, char **argv )
             // Consider each neighboring bin
             for (int k = 0; k < neighbors.size(); k++)
             {
-                cout << "6.2" << endl;
+                //cout << "6.2" << endl;
                 if (neighbors[k] > 0) 
                 {
                     // Consider each particle in that bin   
@@ -247,7 +247,7 @@ int main( int argc, char **argv )
                     {
                         // Compute the force between the current particle and the particles in this bin
                         apply_force(particles[i], bins[k][p], &dmin, &davg, &navg);
-                        cout << "6" << endl;
+                        //cout << "6" << endl;
                     }
                 }
 
@@ -283,16 +283,13 @@ int main( int argc, char **argv )
 
         // The particles have moved, so update the particles in each bin
         // First, clear the current bin information
-        for (int i = 0; i < num_bins * num_bins; i++)
-        {
-            //cout << "8" << endl;
-            bins[i].clear();
-            //cout << "9" << endl;
-        }
+        for (int i = 0; i < num_bins * num_bins; i++) 
+            bins[i].resize(0);
 
         // Update
         for (int i = 0; i < n; i++)
         {
+            //cout << i << " times here" << endl;
             // Compute which bin a particle belongs to based on its location
             offset_x = floor(particles[i].x / getCutoff());
             offset_y = floor(particles[i].y / getCutoff());
@@ -300,6 +297,7 @@ int main( int argc, char **argv )
             which_bin = num_bins * offset_y + offset_x;
 
             // Add the particle to the list of particles in that bin
+            //cout << particles[i].x << endl;
             bins[which_bin].push_back(particles[i]);
         }
 
