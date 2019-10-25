@@ -10,11 +10,14 @@ using namespace std;
 
 // Function to return which neighbors are valid
 vector<int> getNeighbors(int pos, int num_bins) {
-    vector<int> neighbors(9);
+    //cout << "** Considering pos " << pos << endl;
+    vector<int> neighbors(0);
     if (pos % num_bins == 0) {
+        //cout << "A" << endl;
         // Left column
         if (floor(pos / num_bins) == 0)
         {
+            //cout << "AA" << endl;
             // Top row => top left corner
             neighbors.push_back(pos);
             neighbors.push_back(pos + 1);
@@ -28,6 +31,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         }
         else if (floor(pos / num_bins) == num_bins - 1)
         {
+            //cout << "AB" << endl;
             // Bottom row => bottom left corner
             neighbors.push_back(pos);
             neighbors.push_back(pos + 1);
@@ -41,6 +45,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         }
         else
         {
+            //cout << "AC" << endl;
             neighbors.push_back(pos);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos - num_bins);
@@ -54,9 +59,11 @@ vector<int> getNeighbors(int pos, int num_bins) {
     }
     else if (pos % num_bins == num_bins - 1) {
         // Right column
+        //cout << "B" << endl;
 
         if (floor(pos / num_bins) == 0)
         {
+            //cout << "BA" << endl;
             // Top row => top right corner
             neighbors.push_back(pos);
             neighbors.push_back(pos - 1);
@@ -70,6 +77,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         }
         else if (floor(pos / num_bins) == num_bins - 1)
         {
+            //cout << "BB" << endl;
             // Bottom row => bottom right corner
             neighbors.push_back(pos);
             neighbors.push_back(pos - 1);
@@ -83,6 +91,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         }
         else 
         {
+            //cout << "BC" << endl;
             neighbors.push_back(pos);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos - num_bins);
@@ -96,6 +105,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
     }
     else if (floor(pos / num_bins) == 0)
     {
+        //cout << "C" << endl;
         // Top row
         neighbors.push_back(pos);
         neighbors.push_back(pos - 1);
@@ -110,6 +120,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
     }
     else if(floor(pos / num_bins) == num_bins - 1)
     {
+        //cout << "D" << endl;
         // Bottom row
         neighbors.push_back(pos);
         neighbors.push_back(pos + 1);
@@ -123,6 +134,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
     }
     else 
     {
+        //cout << "E" << endl;
         // All eight neighbors are valid
         neighbors.push_back(pos);
         neighbors.push_back(pos + 1);
@@ -134,6 +146,15 @@ vector<int> getNeighbors(int pos, int num_bins) {
         neighbors.push_back(pos - num_bins + 1);
         neighbors.push_back(pos - num_bins - 1);
     }
+    /*
+    cout << "**After making neighbors list size is " << neighbors.size() << endl;
+    cout << "**Elements in there..." << endl;
+    for (int i = 0; i < neighbors.size(); i++)
+    {
+        cout << neighbors[i] << " ";
+    }
+    cout << endl;
+    */
     return neighbors;
 }
 
@@ -172,7 +193,9 @@ int main( int argc, char **argv )
     // The grid size is 0.0005 * number of particles
     // So make sure the bins only consider the cutoff radius where the particles actually react to each other
     // We know cutoff is the length of the bin
-    int num_bins = ceil((sqrt(getDensity() * n)) / getCutoff());
+    //int num_bins = ceil((sqrt(getDensity() * n)) / getCutoff());
+    double bin_length = getCutoff() * 2;
+    int num_bins = ceil((sqrt(getDensity() * n)) / bin_length);
     cout << "num_bins " << num_bins << endl;
 
     // Array to keep track of which particles are in which bins
@@ -185,10 +208,15 @@ int main( int argc, char **argv )
     for (int i = 0; i < n; i++)
     {
         // Compute which bin a particle belongs to based on its location
-        offset_x = floor(particles[i].x / getCutoff());
-        offset_y = floor(particles[i].y / getCutoff());
+        //offset_x = floor(particles[i].x / getCutoff());
+        //offset_y = floor(particles[i].y / getCutoff());
+        offset_x = floor(particles[i].x / bin_length);
+        offset_y = floor(particles[i].y / bin_length);
 
         which_bin = num_bins * offset_y + offset_x;
+
+        //cout << "particle: " << i << ", xpos: " << particles[i].x << ", xoff: " << offset_x << ", ypos: " << particles[i].y << ",yoff: " << offset_y << ", bin: " << which_bin << endl;
+
         if (which_bin >= num_bins * num_bins) {
             cout << "out of boundaries" << endl;
             cout << "w " << which_bin << endl;
@@ -201,6 +229,18 @@ int main( int argc, char **argv )
         // Add the particle to the list of particles in that bin
         bins[which_bin].push_back(particles[i]);
     }
+
+    /*
+    cout << "## ORIGINAL BINS ##" << endl;
+    for (int t = 0; t < bins.size(); t++)
+    {
+        cout << "In bin " << t << endl;
+        for (int s = 0; s < bins[t].size(); s++)
+        {
+            cout << "particle x:" << bins[t][s].x << " particle y:" << bins[t][s].y << endl;
+        }
+    }
+    */
 
 
     //
@@ -225,24 +265,54 @@ int main( int argc, char **argv )
             particles[i].ax = particles[i].ay = 0;
 
             // Get the bin of the current particle
-            offset_x = floor(particles[i].x / getCutoff());
-            offset_y = floor(particles[i].y / getCutoff());
+            //offset_x = floor(particles[i].x / getCutoff());
+            //offset_y = floor(particles[i].y / getCutoff());
+            offset_x = floor(particles[i].x / bin_length);
+            offset_y = floor(particles[i].y / bin_length);
+
             which_bin = num_bins * offset_y + offset_x;
 
             // Get the neighbors of this bin 
+            //cout << "particle " << i << " neighbors" << endl;
             neighbors = getNeighbors(which_bin, num_bins);
+            /*
+            for (int t = 0; t < neighbors.size(); t++){
+                if (neighbors[t] >= 0){
+                    cout << neighbors[t] << " ";
+                }
+            }
+            cout << endl;
+            */
+            
 
             // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
             // Consider each neighboring bin
             for (int k = 0; k < neighbors.size(); k++)
             {
-                if (neighbors[k] > 0) 
+                if (neighbors[k] >= 0) 
                 {
-                    // Consider each particle in that bin
-                    for (int p = 0; p < bins[k].size(); p++)
+                    /*
+                    cout << "~~~Considering bin: " << neighbors[k] << endl;
+                    cout << "~~~Number particles in that bin: " << bins[neighbors[k]].size() << endl;
+                    cout << "~~~ BINS ~~~" << endl;
+                    for (int t = 0; t < bins.size(); t++)
                     {
+                        cout << "In bin " << t << endl;
+                        for (int s = 0; s < bins[t].size(); s++)
+                        {
+                            cout << "particle x:" << bins[t][s].x << " particle y:" << bins[t][s].y << endl;
+                        }
+                    }
+                    */
+                    // Consider each particle in that bin
+                    for (int p = 0; p < bins[neighbors[k]].size(); p++)
+                    {
+                        //cout << "~~~particle x " << bins[neighbors[k]][p].x << " particle y" << bins[neighbors[k]][p].y << endl;
                         // Compute the force between the current particle and the particles in this bin
-                        apply_force(particles[i], bins[k][p], &dmin, &davg, &navg);
+                        if (bins[neighbors[k]].size() > 0)
+                        {
+                            apply_force(particles[i], bins[neighbors[k]][p], &dmin, &davg, &navg);
+                        }
                     }
                 }
 
@@ -285,17 +355,30 @@ int main( int argc, char **argv )
         for (int i = 0; i < n; i++)
         {
             // Compute which bin a particle belongs to based on its location
-            offset_x = floor(particles[i].x / getCutoff());
-            offset_y = floor(particles[i].y / getCutoff());
+            //offset_x = floor(particles[i].x / getCutoff());
+            //offset_y = floor(particles[i].y / getCutoff());
+            offset_x = floor(particles[i].x / bin_length);
+            offset_y = floor(particles[i].y / bin_length);
 
             which_bin = num_bins * offset_y + offset_x;
 
             // Add the particle to the list of particles in that bin
 
-            cout << "This is the particle at x-axis and y-axis: " << particles[i].x << particles[i].y << endl;
-            cout << "Belonging to bin #" << which_bin << endl;
+            //cout << "This is the particle at x-axis and y-axis: " << particles[i].x << particles[i].y << endl;
+            //cout << "Belonging to bin #" << which_bin << endl;
             bins[which_bin].push_back(particles[i]);
         }
+        /*
+        cout << "## AFTER UPDATING BINS ##" << endl;
+        for (int t = 0; t < bins.size(); t++)
+        {
+            cout << "In bin " << t << endl;
+            for (int s = 0; s < bins[t].size(); s++)
+            {
+                cout << "particle x:" << bins[t][s].x << " particle y:" << bins[t][s].y << endl;
+            }
+        }
+        */
 
         // Clear the neighbors vector
         neighbors.clear();
