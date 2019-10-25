@@ -10,12 +10,13 @@ using namespace std;
 
 // Function to return which neighbors are valid
 vector<int> getNeighbors(int pos, int num_bins) {
-    vector<int> neighbors(8);
+    vector<int> neighbors(9);
     if (pos % num_bins == 0) {
         // Left column
         if (floor(pos / num_bins) == 0)
         {
             // Top row => top left corner
+            neighbors.push_back(pos);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos + num_bins);
             neighbors.push_back(pos + num_bins + 1);
@@ -28,6 +29,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         else if (floor(pos / num_bins) == num_bins - 1)
         {
             // Bottom row => bottom left corner
+            neighbors.push_back(pos);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos - num_bins + 1);
@@ -39,6 +41,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         }
         else
         {
+            neighbors.push_back(pos);
             neighbors.push_back(pos + 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos + num_bins);  
@@ -55,6 +58,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         if (floor(pos / num_bins) == 0)
         {
             // Top row => top right corner
+            neighbors.push_back(pos);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos + num_bins);
             neighbors.push_back(pos + num_bins - 1);
@@ -67,6 +71,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         else if (floor(pos / num_bins) == num_bins - 1)
         {
             // Bottom row => bottom right corner
+            neighbors.push_back(pos);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos - num_bins - 1);
@@ -78,6 +83,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
         }
         else 
         {
+            neighbors.push_back(pos);
             neighbors.push_back(pos - 1);
             neighbors.push_back(pos - num_bins);
             neighbors.push_back(pos - num_bins - 1);
@@ -91,6 +97,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
     else if (floor(pos / num_bins) == 0)
     {
         // Top row
+        neighbors.push_back(pos);
         neighbors.push_back(pos - 1);
         neighbors.push_back(pos + 1);
         neighbors.push_back(pos + num_bins);
@@ -104,6 +111,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
     else if(floor(pos / num_bins) == num_bins - 1)
     {
         // Bottom row
+        neighbors.push_back(pos);
         neighbors.push_back(pos + 1);
         neighbors.push_back(pos - 1);
         neighbors.push_back(pos - num_bins);
@@ -116,6 +124,7 @@ vector<int> getNeighbors(int pos, int num_bins) {
     else 
     {
         // All eight neighbors are valid
+        neighbors.push_back(pos);
         neighbors.push_back(pos + 1);
         neighbors.push_back(pos - 1);
         neighbors.push_back(pos + num_bins);
@@ -179,13 +188,6 @@ int main( int argc, char **argv )
         offset_x = floor(particles[i].x / getCutoff());
         offset_y = floor(particles[i].y / getCutoff());
 
-        // ????
-        /*if (offset_x == num_bins)
-            offset_x--;
-
-        if (offset_y == num_bins)
-            offset_y--;*/
-
         which_bin = num_bins * offset_y + offset_x;
         if (which_bin >= num_bins * num_bins) {
             cout << "out of boundaries" << endl;
@@ -206,7 +208,7 @@ int main( int argc, char **argv )
     //
     double simulation_time = read_timer( );
 
-    vector<int> neighbors(8);
+    vector<int> neighbors(9);
 	
     for( int step = 0; step < NSTEPS; step++ )
     {
@@ -227,34 +229,27 @@ int main( int argc, char **argv )
             offset_y = floor(particles[i].y / getCutoff());
             which_bin = num_bins * offset_y + offset_x;
 
-            //cout << "4" << endl;
-
             // Get the neighbors of this bin 
             neighbors = getNeighbors(which_bin, num_bins);
-
-            //cout << "5" << endl;
 
             // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
             // Consider each neighboring bin
             for (int k = 0; k < neighbors.size(); k++)
             {
-                //cout << "6.2" << endl;
                 if (neighbors[k] > 0) 
                 {
-                    // Consider each particle in that bin   
-                    //cout << "6" << endl;
+                    // Consider each particle in that bin
                     for (int p = 0; p < bins[k].size(); p++)
                     {
                         // Compute the force between the current particle and the particles in this bin
                         apply_force(particles[i], bins[k][p], &dmin, &davg, &navg);
-                        //cout << "6" << endl;
                     }
                 }
 
             }
 
             // Clear the neighbors vector
-            //neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
+            neighbors.clear();
         }
  
         //
@@ -289,7 +284,6 @@ int main( int argc, char **argv )
         // Update
         for (int i = 0; i < n; i++)
         {
-            //cout << i << " times here" << endl;
             // Compute which bin a particle belongs to based on its location
             offset_x = floor(particles[i].x / getCutoff());
             offset_y = floor(particles[i].y / getCutoff());
@@ -297,12 +291,14 @@ int main( int argc, char **argv )
             which_bin = num_bins * offset_y + offset_x;
 
             // Add the particle to the list of particles in that bin
-            //cout << particles[i].x << endl;
+
+            cout << "This is the particle at x-axis and y-axis: " << particles[i].x << particles[i].y << endl;
+            cout << "Belonging to bin #" << which_bin << endl;
             bins[which_bin].push_back(particles[i]);
         }
 
         // Clear the neighbors vector
-        //neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
+        neighbors.clear();
     }
     simulation_time = read_timer( ) - simulation_time;
     
