@@ -172,14 +172,45 @@ int main( int argc, char **argv )
     set_size( n );
     init_particles( n, particles );
 
+    // Set the size of the bins
+    // The grid size is sqrt(0.0005 * number of particles)
+    // So make sure the bins only consider the cutoff radius where the particles actually react to each other
+    double bin_length = getCutoff() * 2;
+    int num_bins = ceil((sqrt(getDensity() * n)) / bin_length);
+
+    // Array to keep track of which particles are in which bins
+    vector<vector<particle_t> > bins(num_bins * num_bins);
+    int offset_x;
+    int offset_y;
+    int which_bin;
+
+    vector<int> neighbors(9);
+
     //
     //  simulate a number of time steps
     //
     double simulation_time = read_timer( );
 
-    #pragma omp parallel private(dmin) 
+    #pragma omp parallel private(dmin) // This pragma spawns the threads, so do all the parallel work in here
     {
     numthreads = p; //omp_get_num_threads();
+
+    // We can just split up the particles among all the processors, and they can perform this computation independently
+    #pragma omp for // This pragma divides the particles among the threads
+    for (int i = 0; i < n; i++)
+    {
+        // Compute which bin a particle belongs to based on its location
+        offset_x = floor(particles[i].x / bin_length);
+        offset_y = floor(particles[i].y / bin_length);
+
+        which_bin = num_bins * offset_y + offset_x;
+
+        // Add the particle to the list of particles in that bin
+        // We have to be careful here to avoid data races, so put a barrier here 
+        #pragma omp critical
+        bins[which_bin].push_back(particles[i]);
+    }
+
     for( int step = 0; step < NSTEPS; step++ )
     {
         navg = 0;
@@ -188,12 +219,40 @@ int main( int argc, char **argv )
         //
         //  compute all forces
         //
+
+        // Consider each particle
         #pragma omp for reduction (+:navg) reduction(+:davg)
         for( int i = 0; i < n; i++ )
         {
             particles[i].ax = particles[i].ay = 0;
-            for (int j = 0; j < n; j++ )
-                apply_force( particles[i], particles[j],&dmin,&davg,&navg);
+
+            // Get the bin of the current particle
+            offset_x = floor(particles[i].x / bin_length);
+            offset_y = floor(particles[i].y / bin_length);
+
+            which_bin = num_bins * offset_y + offset_x;
+
+            // Get the neighbors of this bin 
+            neighbors = getNeighbors(which_bin, num_bins);
+            
+            // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
+            // Consider each neighboring bin
+            for (int k = 0; k < neighbors.size(); k++)
+            {
+                if (neighbors[k] >= 0) 
+                {
+                    // Consider each particle in that bin
+                    for (int p = 0; p < bins[neighbors[k]].size(); p++)
+                    {
+                        // Compute the force between the current particle and the particles in this bin
+                        apply_force(particles[i], bins[neighbors[k]][p], &dmin, &davg, &navg);
+                    }
+                }
+
+            }
+
+            // Clear the neighbors vector
+            neighbors.clear();
         }
         
 		
@@ -216,7 +275,7 @@ int main( int argc, char **argv )
           }
 
           #pragma omp critical
-	  if (dmin < absmin) absmin = dmin; 
+	      if (dmin < absmin) absmin = dmin; 
 		
           //
           //  save if necessary
@@ -225,8 +284,32 @@ int main( int argc, char **argv )
           if( fsave && (step%SAVEFREQ) == 0 )
               save( fsave, n, particles );
         }
+
+        // The particles have moved, so update the particles in each bin
+        // First, clear the current bin information
+        #pragma omp for
+        for (int i = 0; i < num_bins * num_bins; i++) 
+            bins[i].resize(0);
+
+        // Update
+        #pragma omp for
+        for (int i = 0; i < n; i++)
+        {
+            // Compute which bin a particle belongs to based on its location
+            offset_x = floor(particles[i].x / bin_length);
+            offset_y = floor(particles[i].y / bin_length);
+
+            which_bin = num_bins * offset_y + offset_x;
+
+            // Add the particle to the list of particles in that bin
+            #pragma omp critical
+            bins[which_bin].push_back(particles[i]);
+        }
+
+        // Clear the neighbors vector
+        neighbors.clear();
     }
-}
+    }
     simulation_time = read_timer( ) - simulation_time;
     
     printf( "n = %d,threads = %d, simulation time = %g seconds", n,numthreads, simulation_time);
