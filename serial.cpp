@@ -170,9 +170,8 @@ int main( int argc, char **argv )
     init_particles( n, particles );
 
     // Set the size of the bins
-    // The grid size is 0.0005 * number of particles
+    // The grid size is sqrt(0.0005 * number of particles)
     // So make sure the bins only consider the cutoff radius where the particles actually react to each other
-    // We know cutoff is the length of the bin
     double bin_length = getCutoff() * 2;
     int num_bins = ceil((sqrt(getDensity() * n)) / bin_length);
 
@@ -235,10 +234,7 @@ int main( int argc, char **argv )
                     for (int p = 0; p < bins[neighbors[k]].size(); p++)
                     {
                         // Compute the force between the current particle and the particles in this bin
-                        if (bins[neighbors[k]].size() > 0)
-                        {
-                            apply_force(particles[i], bins[neighbors[k]][p], &dmin, &davg, &navg);
-                        }
+                        apply_force(particles[i], bins[neighbors[k]][p], &dmin, &davg, &navg);
                     }
                 }
 
