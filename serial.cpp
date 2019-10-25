@@ -4,6 +4,7 @@
 #include <math.h>
 #include <vector>
 #include "common.h"
+#include <iostream>
 
 using namespace std;
 
@@ -162,7 +163,8 @@ int main( int argc, char **argv )
     // The grid size is 0.0005 * number of particles
     // So make sure the bins only consider the cutoff radius where the particles actually react to each other
     // We know cutoff is the length of the bin
-    int num_bins = (getDensity() * n) / getCutoff();
+    int num_bins = (sqrt(getDensity() * n)) / getCutoff();
+    cout << "num_bins " << num_bins << endl;
 
     // Array to keep track of which particles are in which bins
     // We have to compute the bin for each particle, so this is O(n)
@@ -177,13 +179,28 @@ int main( int argc, char **argv )
         offset_x = floor(particles[i].x / getCutoff());
         offset_y = floor(particles[i].y / getCutoff());
 
+        // ????
+        if (offset_x == num_bins)
+            offset_x--;
+
+        if (offset_y == num_bins)
+            offset_y--;
+
         which_bin = num_bins * offset_y + offset_x;
+        if (which_bin >= num_bins * num_bins) {
+            cout << "out of boundaries" << endl;
+            cout << "w " << which_bin << endl;
+            cout << "x " << offset_x << endl;
+            cout << "y " <<offset_y << endl;
+            cout << "x pos: " << particles[i].x << endl;
+            cout << "y pos: " << particles[i].y << endl;
+        }
 
         // Add the particle to the list of particles in that bin
         bins[which_bin].push_back(particles[i]);
     }
 
-    
+
     //
     //  simulate a number of time steps
     //
@@ -210,27 +227,34 @@ int main( int argc, char **argv )
             offset_y = floor(particles[i].y / getCutoff());
             which_bin = num_bins * offset_y + offset_x;
 
+            //cout << "4" << endl;
+
             // Get the neighbors of this bin 
             neighbors = getNeighbors(which_bin, num_bins);
+
+            //cout << "5" << endl;
 
             // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
             // Consider each neighboring bin
             for (int k = 0; k < neighbors.size(); k++)
             {
+                cout << "6.2" << endl;
                 if (neighbors[k] > 0) 
                 {
                     // Consider each particle in that bin   
+                    //cout << "6" << endl;
                     for (int p = 0; p < bins[k].size(); p++)
                     {
                         // Compute the force between the current particle and the particles in this bin
-                        apply_force(particles[i], particles[p], &dmin, &davg, &navg);
+                        apply_force(particles[i], bins[k][p], &dmin, &davg, &navg);
+                        cout << "6" << endl;
                     }
                 }
 
             }
 
             // Clear the neighbors vector
-            neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
+            //neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
         }
  
         //
@@ -261,7 +285,9 @@ int main( int argc, char **argv )
         // First, clear the current bin information
         for (int i = 0; i < num_bins * num_bins; i++)
         {
-            bins[i].erase(bins[i].begin(), bins[i].begin() + n - 1);
+            //cout << "8" << endl;
+            bins[i].clear();
+            //cout << "9" << endl;
         }
 
         // Update
@@ -278,7 +304,7 @@ int main( int argc, char **argv )
         }
 
         // Clear the neighbors vector
-        neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
+        //neighbors.erase(neighbors.begin(), neighbors.begin() + n - 1);
     }
     simulation_time = read_timer( ) - simulation_time;
     
