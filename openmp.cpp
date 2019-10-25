@@ -2,8 +2,141 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <vector>
 #include "common.h"
 #include "omp.h"
+
+using namespace std;
+
+// Function to return which neighbors are valid
+vector<int> getNeighbors(int pos, int num_bins) {
+    vector<int> neighbors(0);
+    if (pos % num_bins == 0) {
+        // Left column
+        if (floor(pos / num_bins) == 0)
+        {
+            // Top row => top left corner
+            neighbors.push_back(pos);
+            neighbors.push_back(pos + 1);
+            neighbors.push_back(pos + num_bins);
+            neighbors.push_back(pos + num_bins + 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+        }
+        else if (floor(pos / num_bins) == num_bins - 1)
+        {
+            // Bottom row => bottom left corner
+            neighbors.push_back(pos);
+            neighbors.push_back(pos + 1);
+            neighbors.push_back(pos - num_bins);
+            neighbors.push_back(pos - num_bins + 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+        }
+        else
+        {
+            neighbors.push_back(pos);
+            neighbors.push_back(pos + 1);
+            neighbors.push_back(pos - num_bins);
+            neighbors.push_back(pos + num_bins);  
+            neighbors.push_back(pos - num_bins + 1);
+            neighbors.push_back(pos + num_bins + 1);    
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+        }
+    }
+    else if (pos % num_bins == num_bins - 1) {
+        // Right column
+
+        if (floor(pos / num_bins) == 0)
+        {
+            // Top row => top right corner
+            neighbors.push_back(pos);
+            neighbors.push_back(pos - 1);
+            neighbors.push_back(pos + num_bins);
+            neighbors.push_back(pos + num_bins - 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+        }
+        else if (floor(pos / num_bins) == num_bins - 1)
+        {
+            // Bottom row => bottom right corner
+            neighbors.push_back(pos);
+            neighbors.push_back(pos - 1);
+            neighbors.push_back(pos - num_bins);
+            neighbors.push_back(pos - num_bins - 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+        }
+        else 
+        {
+            neighbors.push_back(pos);
+            neighbors.push_back(pos - 1);
+            neighbors.push_back(pos - num_bins);
+            neighbors.push_back(pos - num_bins - 1);
+            neighbors.push_back(pos + num_bins);
+            neighbors.push_back(pos + num_bins - 1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+            neighbors.push_back(-1);
+        }
+    }
+    else if (floor(pos / num_bins) == 0)
+    {
+        // Top row
+        neighbors.push_back(pos);
+        neighbors.push_back(pos - 1);
+        neighbors.push_back(pos + 1);
+        neighbors.push_back(pos + num_bins);
+        neighbors.push_back(pos + num_bins - 1);
+        neighbors.push_back(pos + num_bins + 1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
+
+    }
+    else if(floor(pos / num_bins) == num_bins - 1)
+    {
+        // Bottom row
+        neighbors.push_back(pos);
+        neighbors.push_back(pos + 1);
+        neighbors.push_back(pos - 1);
+        neighbors.push_back(pos - num_bins);
+        neighbors.push_back(pos - num_bins - 1);
+        neighbors.push_back(pos - num_bins + 1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
+        neighbors.push_back(-1);
+    }
+    else 
+    {
+        // All eight neighbors are valid
+        neighbors.push_back(pos);
+        neighbors.push_back(pos + 1);
+        neighbors.push_back(pos - 1);
+        neighbors.push_back(pos + num_bins);
+        neighbors.push_back(pos - num_bins);
+        neighbors.push_back(pos + num_bins + 1);
+        neighbors.push_back(pos + num_bins - 1);
+        neighbors.push_back(pos - num_bins + 1);
+        neighbors.push_back(pos - num_bins - 1);
+    }
+
+    return neighbors;
+}
 
 //
 //  benchmarking program
@@ -18,6 +151,7 @@ int main( int argc, char **argv )
         printf( "Options:\n" );
         printf( "-h to see this help\n" );
         printf( "-n <int> to set number of particles\n" );
+        printf( "-p <int> to set number of threads\n" );
         printf( "-o <filename> to specify the output file name\n" );
         printf( "-s <filename> to specify a summary file name\n" ); 
         printf( "-no turns off all correctness checks and particle output\n");   
@@ -25,6 +159,9 @@ int main( int argc, char **argv )
     }
 
     int n = read_int( argc, argv, "-n", 1000 );
+    int p = read_int( argc, argv, "-p", 1 );
+    omp_set_num_threads(p);
+
     char *savename = read_string( argc, argv, "-o", NULL );
     char *sumname = read_string( argc, argv, "-s", NULL );
 
@@ -42,12 +179,12 @@ int main( int argc, char **argv )
 
     #pragma omp parallel private(dmin) 
     {
-    numthreads = omp_get_num_threads();
+    numthreads = p; //omp_get_num_threads();
     for( int step = 0; step < NSTEPS; step++ )
     {
         navg = 0;
         davg = 0.0;
-	dmin = 1.0;
+	    dmin = 1.0;
         //
         //  compute all forces
         //
