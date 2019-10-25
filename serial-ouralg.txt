@@ -1,0 +1,11 @@
+500 0.14909
+1000 0.310214
+2000 0.648145
+4000 1.36569
+8000 2.85955
+
+Serial code is O(N^slope)
+Slope estimates are : 1.057080 1.063053 1.075242 1.066158
+Slope estimate for line fit is: 1.066136
+
+

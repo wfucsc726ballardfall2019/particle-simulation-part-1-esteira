@@ -1,15 +1,24 @@
 #!/bin/bash -l
 #SBATCH -p small          
 #SBATCH -N 1              # you'll never need more than 1 node for the serial code
+#SBATCH --mem=32GB
 #SBATCH -t 00:20:00       # adjust the amount of time as necessary
 #SBATCH -J auto-serial
 #SBATCH -o auto-serial.%j.stdout
 #SBATCH -e auto-serial.%j.error
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=viviiv14@wfu.edu
+#SBATCH --reservation=csc726
 
-rm serial.txt
-srun -n 1 -c 1 ./serial -n 500 -no -s serial.txt
-srun -n 1 -c 1 ./serial -n 1000 -no -s serial.txt
-srun -n 1 -c 1 ./serial -n 2000 -no -s serial.txt
-srun -n 1 -c 1 ./serial -n 4000 -no -s serial.txt
-srun -n 1 -c 1 ./serial -n 8000 -no -s serial.txt
-./autograder -v serial -s serial.txt
+cd /deac/classes/csc726/$USER/particle-simulation-part-1-esteira
+
+make || exit 1
+
+filename="serial-${SLURM_JOB_ID}.txt"
+
+./serial -n 500 -no -s $filename
+./serial -n 1000 -no -s $filename
+./serial -n 2000 -no -s $filename
+./serial -n 4000 -no -s $filename
+./serial -n 8000 -no -s $filename
+./autograder -v serial -s $filename >> $filename
