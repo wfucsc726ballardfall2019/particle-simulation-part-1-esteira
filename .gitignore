@@ -6,3 +6,6 @@ autograder
 .vscode/
 *.out
 *.o
+*.txt
+*.error
+*.stdout
