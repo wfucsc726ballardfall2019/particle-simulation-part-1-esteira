@@ -185,9 +185,8 @@ int main( int argc, char **argv )
     int offset_y;
     int which_bin;
 
-    vector<int> neighbors(9);
-
     // We can just split up the particles among all the processors, and they can perform this computation independently
+    // We want to make sure all threads can access this vector
     #pragma omp parallel for // This pragma divides the particles among the threads
     for (int i = 0; i < n; i++)
     {
@@ -208,29 +207,19 @@ int main( int argc, char **argv )
     //
     double simulation_time = read_timer( );
 
-    #pragma omp parallel private(dmin) shared(bins) private(neighbors) // This pragma spawns the threads, so do all the parallel work in here
+    #pragma omp parallel private(dmin) shared(bins) // This pragma spawns the threads, so do all the parallel work in here
     {
-    numthreads = p; //omp_get_num_threads();
-    int thread_id = omp_get_thread_num();
+    numthreads = p;
 
-    /*#pragma omp critical
-    {
-    cout << "Created bins by thread " << thread_id << endl;
-    for (int t = 0; t < bins.size(); t++)
-    {
-        cout << "Bin " << t << endl;
-        for (int p = 0; p < bins[t].size(); p++)
-        {
-            cout << "Particle x: " << bins[t][p].x << ", Particle y: " << bins[t][p].y << endl;
-        }
-    }
-    }*/
+    // Make sure each thread has its own local copy of the following variables
+    int thread_id = omp_get_thread_num();
+    vector<int> neighbors(9);
+    int offset_x;
+    int offset_y;
+    int which_bin;
 
     for( int step = 0; step < NSTEPS; step++ )
     {
-        //#pragma omp critical
-        //cout << "#### STEP " << step << " ####" << endl;
-
         navg = 0;
         davg = 0.0;
 	    dmin = 1.0;
@@ -252,16 +241,6 @@ int main( int argc, char **argv )
 
             // Get the neighbors of this bin 
             neighbors = getNeighbors(which_bin, num_bins);
-            /*#pragma omp critical
-            {
-            cout << "Thread " << thread_id << " considering particle " << i << " with neighbors: " << endl;
-            for (int n = 0; n < neighbors.size(); n++)
-            {
-                cout << neighbors[n] << " ";
-            }
-            cout << endl;
-            }*/
-            cout << "Got neighbors by thread " << thread_id << endl;
             
             // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
             // Consider each neighboring bin
@@ -273,13 +252,12 @@ int main( int argc, char **argv )
                     for (int p = 0; p < bins[neighbors[k]].size(); p++)
                     {
                         // Compute the force between the current particle and the particles in this bin
-                        #pragma omp critical
                         apply_force(particles[i], bins[neighbors[k]][p], &dmin, &davg, &navg);
                     }
                 }
 
             }
-            cout << "Applied force by thread " << thread_id << endl;
+
             // Clear the neighbors vector
             neighbors.clear();
         }
@@ -337,7 +315,6 @@ int main( int argc, char **argv )
 
         // Clear the neighbors vector
         neighbors.clear();
-        cout << "Updated by thread " << thread_id << endl;
     }
     }
     simulation_time = read_timer( ) - simulation_time;
