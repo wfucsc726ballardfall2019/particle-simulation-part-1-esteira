@@ -244,11 +244,13 @@ int main( int argc, char **argv )
             
             // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
             // Consider each neighboring bin
+            //#pragma omp parallel for
             for (int k = 0; k < neighbors.size(); k++)
             {
                 if (neighbors[k] >= 0) 
                 {
                     // Consider each particle in that bin
+                    //#pragma omp parallel for
                     for (int p = 0; p < bins[neighbors[k]].size(); p++)
                     {
                         // Compute the force between the current particle and the particles in this bin
