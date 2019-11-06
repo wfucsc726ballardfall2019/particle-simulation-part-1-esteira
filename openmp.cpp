@@ -1,56 +1,63 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <math.h>
 #include <vector>
 #include <iostream>
 #include "common.h"
 #include "omp.h"
+#define NEIGHBORS_SIZE 9
+
+void getNeighbors(int pos, int num_bins, int *neighbors);
+void clearNeighbors(int *neighbors);
 
 using namespace std;
 
 // Function to return which neighbors are valid
-vector<int> getNeighbors(int pos, int num_bins) {
-    vector<int> neighbors(0);
+void clearNeighbors(int *neighbors) {
+    for (int i = 0; i < NEIGHBORS_SIZE; i++) {
+        neighbors[i] = -1;
+    }
+}
+
+void getNeighbors(int pos, int num_bins, int *neighbors) {
+    neighbors[0] = pos;
+
     if (pos % num_bins == 0) {
         // Left column
         if (floor(pos / num_bins) == 0)
         {
             // Top row => top left corner
-            neighbors.push_back(pos);
-            neighbors.push_back(pos + 1);
-            neighbors.push_back(pos + num_bins);
-            neighbors.push_back(pos + num_bins + 1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
+            neighbors[1] = (pos + 1);
+            neighbors[2] = (pos + num_bins);
+            neighbors[3] = (pos + num_bins + 1);
+            neighbors[4] = (-1);
+            neighbors[5] = (-1);
+            neighbors[6] = (-1);
+            neighbors[7] = (-1);
+            neighbors[8] = (-1);
         }
         else if (floor(pos / num_bins) == num_bins - 1)
         {
             // Bottom row => bottom left corner
-            neighbors.push_back(pos);
-            neighbors.push_back(pos + 1);
-            neighbors.push_back(pos - num_bins);
-            neighbors.push_back(pos - num_bins + 1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
+            neighbors[1] = (pos + 1);
+            neighbors[2] = (pos - num_bins);
+            neighbors[3] = (pos - num_bins + 1);
+            neighbors[4] = (-1);
+            neighbors[5] = (-1);
+            neighbors[6] = (-1);
+            neighbors[7] = (-1);
+            neighbors[8] = (-1);
         }
         else
         {
-            neighbors.push_back(pos);
-            neighbors.push_back(pos + 1);
-            neighbors.push_back(pos - num_bins);
-            neighbors.push_back(pos + num_bins);  
-            neighbors.push_back(pos - num_bins + 1);
-            neighbors.push_back(pos + num_bins + 1);    
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
+            neighbors[1] = (pos + 1);
+            neighbors[2] = (pos - num_bins);
+            neighbors[3] = (pos + num_bins);  
+            neighbors[4] = (pos - num_bins + 1);
+            neighbors[5] = (pos + num_bins + 1);    
+            neighbors[6] = (-1);
+            neighbors[7] = (-1);
+            neighbors[8] = (-1);
         }
     }
     else if (pos % num_bins == num_bins - 1) {
@@ -59,84 +66,76 @@ vector<int> getNeighbors(int pos, int num_bins) {
         if (floor(pos / num_bins) == 0)
         {
             // Top row => top right corner
-            neighbors.push_back(pos);
-            neighbors.push_back(pos - 1);
-            neighbors.push_back(pos + num_bins);
-            neighbors.push_back(pos + num_bins - 1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
+            neighbors[1] = (pos - 1);
+            neighbors[2] = (pos + num_bins);
+            neighbors[3] = (pos + num_bins - 1);
+            neighbors[4] = (-1);
+            neighbors[5] = (-1);
+            neighbors[6] = (-1);
+            neighbors[7] = (-1);
+            neighbors[8] = (-1);
         }
         else if (floor(pos / num_bins) == num_bins - 1)
         {
             // Bottom row => bottom right corner
-            neighbors.push_back(pos);
-            neighbors.push_back(pos - 1);
-            neighbors.push_back(pos - num_bins);
-            neighbors.push_back(pos - num_bins - 1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
+            neighbors[1] = (pos - 1);
+            neighbors[2] = (pos - num_bins);
+            neighbors[3] = (pos - num_bins - 1);
+            neighbors[4] = (-1);
+            neighbors[5] = (-1);
+            neighbors[6] = (-1);
+            neighbors[7] = (-1);
+            neighbors[8] = (-1);
         }
         else 
         {
-            neighbors.push_back(pos);
-            neighbors.push_back(pos - 1);
-            neighbors.push_back(pos - num_bins);
-            neighbors.push_back(pos - num_bins - 1);
-            neighbors.push_back(pos + num_bins);
-            neighbors.push_back(pos + num_bins - 1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
-            neighbors.push_back(-1);
+            neighbors[1] = (pos - 1);
+            neighbors[2] = (pos - num_bins);
+            neighbors[3] = (pos - num_bins - 1);
+            neighbors[4] = (pos + num_bins);
+            neighbors[5] = (pos + num_bins - 1);
+            neighbors[6] = (-1);
+            neighbors[7] = (-1);
+            neighbors[8] = (-1);
         }
     }
     else if (floor(pos / num_bins) == 0)
     {
         // Top row
-        neighbors.push_back(pos);
-        neighbors.push_back(pos - 1);
-        neighbors.push_back(pos + 1);
-        neighbors.push_back(pos + num_bins);
-        neighbors.push_back(pos + num_bins - 1);
-        neighbors.push_back(pos + num_bins + 1);
-        neighbors.push_back(-1);
-        neighbors.push_back(-1);
-        neighbors.push_back(-1);
+        neighbors[1] = (pos - 1);
+        neighbors[2] = (pos + 1);
+        neighbors[3] = (pos + num_bins);
+        neighbors[4] = (pos + num_bins - 1);
+        neighbors[5] = (pos + num_bins + 1);
+        neighbors[6] = (-1);
+        neighbors[7] = (-1);
+        neighbors[8] = (-1);
 
     }
     else if(floor(pos / num_bins) == num_bins - 1)
     {
         // Bottom row
-        neighbors.push_back(pos);
-        neighbors.push_back(pos + 1);
-        neighbors.push_back(pos - 1);
-        neighbors.push_back(pos - num_bins);
-        neighbors.push_back(pos - num_bins - 1);
-        neighbors.push_back(pos - num_bins + 1);
-        neighbors.push_back(-1);
-        neighbors.push_back(-1);
-        neighbors.push_back(-1);
+        neighbors[1] = (pos + 1);
+        neighbors[2] = (pos - 1);
+        neighbors[3] = (pos - num_bins);
+        neighbors[4] = (pos - num_bins - 1);
+        neighbors[5] = (pos - num_bins + 1);
+        neighbors[6] = (-1);
+        neighbors[7] = (-1);
+        neighbors[8] = (-1);
     }
     else 
     {
         // All eight neighbors are valid
-        neighbors.push_back(pos);
-        neighbors.push_back(pos + 1);
-        neighbors.push_back(pos - 1);
-        neighbors.push_back(pos + num_bins);
-        neighbors.push_back(pos - num_bins);
-        neighbors.push_back(pos + num_bins + 1);
-        neighbors.push_back(pos + num_bins - 1);
-        neighbors.push_back(pos - num_bins + 1);
-        neighbors.push_back(pos - num_bins - 1);
+        neighbors[1] = (pos + 1);
+        neighbors[2] = (pos - 1);
+        neighbors[3] = (pos + num_bins);
+        neighbors[4] = (pos - num_bins);
+        neighbors[5] = (pos + num_bins + 1);
+        neighbors[6] = (pos + num_bins - 1);
+        neighbors[7] = (pos - num_bins + 1);
+        neighbors[8] = (pos - num_bins - 1);
     }
-
-    return neighbors;
 }
 
 //
@@ -185,6 +184,10 @@ int main( int argc, char **argv )
     int offset_y;
     int which_bin;
 
+    // Initialize the lock
+    omp_lock_t binlock;
+    omp_init_lock(&binlock);
+
     // We can just split up the particles among all the processors, and they can perform this computation independently
     // We want to make sure all threads can access this vector
     #pragma omp parallel for // This pragma divides the particles among the threads
@@ -198,8 +201,11 @@ int main( int argc, char **argv )
 
         // Add the particle to the list of particles in that bin
         // We have to be careful here to avoid data races, so put a barrier here 
-        #pragma omp critical
+        //#pragma omp critical
+        // Instead of putting a critical section (in which case the code will run serially), put a lock
+        omp_set_lock(&binlock);
         bins[which_bin].push_back(particles[i]);
+        omp_unset_lock(&binlock);
     }
 
     //
@@ -213,7 +219,7 @@ int main( int argc, char **argv )
 
     // Make sure each thread has its own local copy of the following variables
     int thread_id = omp_get_thread_num();
-    vector<int> neighbors(9);
+    int *neighbors = new int[NEIGHBORS_SIZE];
     int offset_x;
     int offset_y;
     int which_bin;
@@ -240,12 +246,12 @@ int main( int argc, char **argv )
             which_bin = num_bins * offset_y + offset_x;
 
             // Get the neighbors of this bin 
-            neighbors = getNeighbors(which_bin, num_bins);
+            getNeighbors(which_bin, num_bins, neighbors);
             
             // Now we have valid neighbors, so compute force between the current particle and the particles in the neighboring bins
             // Consider each neighboring bin
             //#pragma omp parallel for
-            for (int k = 0; k < neighbors.size(); k++)
+            for (int k = 0; k < NEIGHBORS_SIZE; k++)
             {
                 if (neighbors[k] >= 0) 
                 {
@@ -261,7 +267,7 @@ int main( int argc, char **argv )
             }
 
             // Clear the neighbors vector
-            neighbors.clear();
+            clearNeighbors(neighbors);
         }
         
 		
@@ -311,17 +317,23 @@ int main( int argc, char **argv )
             which_bin = num_bins * offset_y + offset_x;
 
             // Add the particle to the list of particles in that bin
-            #pragma omp critical
+            //#pragma omp critical
+            // Instead of putting a critical section (in which case the code will run serially), put a lock
+            omp_set_lock(&binlock);
             bins[which_bin].push_back(particles[i]);
+            omp_unset_lock(&binlock);
         }
 
         // Clear the neighbors vector
-        neighbors.clear();
+        clearNeighbors(neighbors);
     }
     }
     simulation_time = read_timer( ) - simulation_time;
     
     printf( "n = %d,threads = %d, simulation time = %g seconds", n,numthreads, simulation_time);
+
+    // Destroy the lock
+    omp_destroy_lock(&binlock);
 
     if( find_option( argc, argv, "-no" ) == -1 )
     {
@@ -357,3 +369,4 @@ int main( int argc, char **argv )
     
     return 0;
 }
+
