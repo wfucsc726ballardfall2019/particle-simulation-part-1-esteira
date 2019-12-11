@@ -1,0 +1,20 @@
+Feedback
+
+Serial
+ - Explanation: Clear explanation.
+ - Implementation: Used 2D vector.
+ - Results: Good.
+34/34
+
+OpenMP
+ - Explanation: Reasonable explanations and analysis.
+ - Implementation: Tried locks on bins but failed, and used critical section instead.  Bug was in computing offset_x, offset_y, and which_bin.  Those need to be private variables but were by default shared, which cause data races and setting lock outside of array bounds.  I'm guess the critical section slowed things down so much that data races had less chance of occurring.
+ - Results: After fixing the bug, speedups were okay (e.g. 6x on 16 threads for n=10000).  Analysis of weak and strong scaling results a little misleading.  The weak scaling of naive code is bad because work increases like O(n^2/p) but O(n/p) is fixed.
+25/33
+
+MPI
+ - Explanation: Proposed algorithm is a little crazy.  Having one processor collect global particles into bins and then broadcast each bin to everyone is wayyy slower than just having everyone bin all the particles independently.   
+ - Implementation: The code is correct but slows down tremendously because of much too much communication.
+ - Results: I think you must've run your code twice to get the same results in your comparison between naive and efficient.  The naive code is much slower using 1 process (10 seconds for n=2000), but it scales reasonably well (.67 seconds for 32 threads and n=2000).
+22/33
+
